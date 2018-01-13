@@ -34,8 +34,8 @@ class ObjectValue implements JsonValue
     public function setContext(Context $context)
     {
         $this->context = $context;
-        foreach($this->keys as $name => $values) {
-            foreach($values as $value) {
+        foreach ($this->keys as $name => $values) {
+            foreach ($values as $value) {
                 $value->value->setContext($context);
             }
         }
@@ -44,49 +44,147 @@ class ObjectValue implements JsonValue
     }
 
     /**
-     * Get value under given key with constraints evaluation.
-     *
      * @param string $key
      * @param string|string[] $constraints
-     * @return JsonValue
+     * @param callable $callback
+     * @param bool $isNested
+     * @return mixed
      * @throws TraversePathNotFoundException
      */
-    public function traverse($key, $constraints)
+    private function access($key, $constraints, callable $callback, $isNested = true)
     {
-        // TODO: Implement traverse() method.
+        if (empty($key)) {
+            $results = [];
+            foreach (array_keys($this->keys) as $keyName) {
+                if (!isset($results[$keyName])) {
+                    $results[$keyName] = null;
+                }
+
+                $results[$keyName] = self::merge(
+                    $results[$keyName],
+                    $this->accessKey($keyName, null, $constraints, $callback)
+                );
+            }
+
+            return $results;
+        }
+
+        $parts = explode('.', $key, 2);
+        $keyName = $parts[0];
+        $subKey = isset($parts[1]) ? $parts[1] : null;
+
+        if (!isset($this->keys[$keyName])) {
+            $availableKeysStr = implode(', ', array_keys($this->keys));
+            throw new TraversePathNotFoundException("Key not found in JSON object, given '$keyName' key which not exists in available set: $availableKeysStr");
+        }
+
+        return $this->accessKey($keyName, $subKey, $constraints, $callback);
+    }
+
+    /**
+     * @param string $keyName
+     * @param string $subKey
+     * @param string|string[] $constraints
+     * @param callable $callback
+     * @return mixed
+     */
+    private function accessKey($keyName, $subKey, $constraints, callable $callback)
+    {
+        $results = null;
+        foreach ($this->keys[$keyName] as $item) {
+            if ($this->context->satisfy($constraints, $item->constraints)) {
+                $obj = $callback($item->value, $subKey, $constraints);
+                $results = self::merge($results, $obj);
+            }
+        }
+
+        return $results;
     }
 
     /**
      * Get JSON structure after evaluating constraints.
      *
+     * @param string|null $key Limit scope, use empty value to get whole structure.
      * @param string|string[] $constraints
      * @return mixed
      * @throws TraversePathNotFoundException
      */
-    public function get($constraints)
+    public function get($key, $constraints)
     {
-        // TODO: Implement get() method.
+        return $this->access($key, $constraints, function (JsonValue $item, $subKey, $constraints) {
+            return $item->get($subKey, $constraints);
+        });
     }
 
     /**
      * Get raw JSON structure (as is).
      *
+     * @param string|null $key Limit scope, use empty value to get whole structure.
      * @param string|string[] $constraints
      * @return mixed
      * @throws TraversePathNotFoundException
      */
-    public function getRaw($constraints)
+    public function getRaw($key, $constraints)
     {
-        // TODO: Implement getRaw() method.
+        return $this->access($key, $constraints, function (JsonValue $item, $subKey, $constraints) {
+            return $item->getRaw($subKey, $constraints);
+        });
     }
 
     /**
-     * @param JsonValue $item
-     * @return JsonValue New value from merging current and provided value.
+     * @param mixed $itemA
+     * @param mixed $itemB
+     * @return mixed
      */
-    public function merge(JsonValue $item)
+    public static function merge($itemA, $itemB)
     {
-        // TODO: Implement merge() method.
+        if (empty($itemA)) {
+            return $itemB;
+        }
+
+        if (empty($itemB)) {
+            return $itemA;
+        }
+
+        if (self::isJsonObject($itemA) || self::isJsonObject($itemB)) {
+            return self::mergeObjects($itemA, $itemB);
+        }
+
+        if (is_array($itemA) && is_array($itemB)) {
+            return array_merge($itemA, $itemB);
+        }
+
+        if (is_array($itemA)) {
+            return array_merge($itemA, [$itemB]);
+        }
+
+        if (is_array($itemB)) {
+            return array_merge([$itemA], $itemB);
+        }
+
+        return [$itemA, $itemB];
+    }
+
+    /**
+     * @param array $itemA
+     * @param array $itemB
+     * @return array
+     */
+    private static function mergeObjects($itemA, $itemB)
+    {
+        $result = $itemA;
+        foreach ($itemB as $key => $value) {
+            if(!isset($result[$key])) {
+                $result[$key] = null;
+            }
+
+            $result[$key] = self::merge(
+                $result[$key],
+                $value
+            );
+        }
+
+        return $result;
     }
 
     /**
@@ -109,10 +207,10 @@ class ObjectValue implements JsonValue
         $factory = new Factory();
         $json = new ObjectValue();
 
-        foreach($obj as $key => $value) {
+        foreach ($obj as $key => $value) {
             $extKey = self::parseKey($key, $nameSeparator, $constraintsSeparator);
 
-            if(!isset($json->keys[$extKey->name])) {
+            if (!isset($json->keys[$extKey->name])) {
                 $json->keys[$extKey->name] = [];
             }
 
@@ -149,7 +247,7 @@ class ObjectValue implements JsonValue
             'constraints' => [],
         ];
 
-        if(isset($parts[1])) {
+        if (isset($parts[1])) {
             $result->constraints = explode($constraintsSeparator, $parts[1]);
         }
 

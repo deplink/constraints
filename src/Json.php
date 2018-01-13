@@ -96,13 +96,7 @@ class Json
      */
     public function get($key, $constraints)
     {
-        if (empty($key)) {
-            return $this->root->get($constraints);
-        }
-
-        return $this->root
-            ->traverse($key, $constraints)
-            ->get($constraints);
+        return $this->root->get($key, $constraints);
     }
 
     /**
@@ -115,12 +109,6 @@ class Json
      */
     public function getRaw($key, $constraints)
     {
-        if (empty($key)) {
-            return $this->root->getRaw($constraints);
-        }
-
-        return $this->root
-            ->traverse($key, $constraints)
-            ->getRaw($constraints);
+        return $this->root->getRaw($key, $constraints);
     }
 }

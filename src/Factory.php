@@ -21,7 +21,7 @@ class Factory
     ];
 
     /**
-     * @param string|object|array $json
+     * @param mixed $json
      * @param string $nameSeparator
      * @param string $constraintsSeparator
      * @return JsonValue
@@ -29,10 +29,6 @@ class Factory
      */
     public function parseJson($json, $nameSeparator = ':', $constraintsSeparator = ',')
     {
-        if(is_string($json)) {
-            $json = json_decode($json, true);
-        }
-
         foreach(self::VALUES_NS as $valueNs)  {
             try {
                 /** @var JsonValue $value */

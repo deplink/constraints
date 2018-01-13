@@ -13,7 +13,7 @@ class ArrayValue implements JsonValue
     /**
      * @var JsonValue[]
      */
-    private $values;
+    private $items;
 
     /**
      * @param Context $context
@@ -21,23 +21,31 @@ class ArrayValue implements JsonValue
      */
     public function setContext(Context $context)
     {
-        foreach($this->values as $value) {
-            $value->setContext($context);
+        foreach($this->items as $item) {
+            $item->setContext($context);
         }
 
         return $this;
     }
 
     /**
-     * Get value under given key with constraints evaluation.
-     *
      * @param string $key
      * @param string|string[] $constraints
-     * @return JsonValue
+     * @param callable $callback
+     * @return mixed
      * @throws TraversePathNotFoundException
      */
-    public function traverse($key, $constraints)
+    private function access($key, $constraints, callable $callback)
     {
+        if(empty($key)) {
+            $results = [];
+            foreach($this->items as $item) {
+                $results[] = $callback($item, null, $constraints);
+            }
+
+            return $results;
+        }
+
         $parts = explode('.', $key, 2);
         $index = $parts[0];
 
@@ -45,49 +53,45 @@ class ArrayValue implements JsonValue
             throw new TraversePathNotFoundException("Traversing the array value must be done using the numeric keys.");
         }
 
-        if($index < 0 || $index >= count($this->values)) {
+        if($index < 0 || $index >= count($this->items)) {
             throw new TraversePathNotFoundException("Cannot traverse the array value '$key', index out of range.");
         }
 
         if(isset($parts[1])) {
-            return $this->values[$index]->traverse($parts[1], $constraints);
+            return $callback($this->items[$index], $parts[1], $constraints);
         }
 
-        return $this->values[$index];
+        return $callback($this->items[$index], null, $constraints);
     }
 
     /**
      * Get JSON structure after evaluating constraints.
      *
+     * @param string|null $key Limit scope, use empty value to get whole structure.
      * @param string|string[] $constraints
      * @return mixed
      * @throws TraversePathNotFoundException
      */
-    public function get($constraints)
+    public function get($key, $constraints)
     {
-        $results = [];
-        foreach($this->values as $value) {
-            $results[] = $value->get($constraints);
-        }
-
-        return $results;
+        return $this->access($key, $constraints, function(JsonValue $item, $subKey, $constraints) {
+            return $item->get($subKey, $constraints);
+        });
     }
 
     /**
      * Get raw JSON structure (as is).
      *
+     * @param string|null $key Limit scope, use empty value to get whole structure.
      * @param string|string[] $constraints
      * @return mixed
      * @throws TraversePathNotFoundException
      */
-    public function getRaw($constraints)
+    public function getRaw($key, $constraints)
     {
-        $results = [];
-        foreach($this->values as $value) {
-            $results[] = $value->getRaw($constraints);
-        }
-
-        return $results;
+        return $this->access($key, $constraints, function(JsonValue $item, $subKey, $constraints) {
+            return $item->getRaw($subKey, $constraints);
+        });
     }
 
     /**
@@ -104,11 +108,11 @@ class ArrayValue implements JsonValue
         }
 
         $json = new ArrayValue();
-        $json->values = [];
+        $json->items = [];
 
         $factory = new Factory();
         foreach($obj as $item) {
-            $json->values[] = $factory->parseJson($item, $nameSeparator, $constraintsSeparator);
+            $json->items[] = $factory->parseJson($item, $nameSeparator, $constraintsSeparator);
         }
 
         return $json;

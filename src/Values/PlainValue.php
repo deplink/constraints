@@ -26,41 +26,36 @@ class PlainValue implements JsonValue
     }
 
     /**
-     * Get value under given key with constraints evaluation.
+     * Get JSON structure after evaluating constraints.
      *
-     * @param string $key
+     * @param string|null $key Limit scope, use empty value to get whole structure.
      * @param string|string[] $constraints
-     * @return JsonValue
+     * @return mixed
      * @throws TraversePathNotFoundException
      */
-    public function traverse($key, $constraints)
+    public function get($key, $constraints)
     {
-        if(!empty($key)) {
+        if (!empty($key)) {
             throw new TraversePathNotFoundException("Plain value doesn't support traversing.");
         }
 
-        return $this;
-    }
-
-    /**
-     * Get JSON structure after evaluating constraints.
-     *
-     * @param string|string[] $constraints
-     * @return mixed
-     */
-    public function get($constraints)
-    {
         return $this->value;
     }
 
     /**
      * Get raw JSON structure (as is).
      *
+     * @param string|null $key Limit scope, use empty value to get whole structure.
      * @param string|string[] $constraints
      * @return mixed
+     * @throws TraversePathNotFoundException
      */
-    public function getRaw($constraints)
+    public function getRaw($key, $constraints)
     {
+        if (!empty($key)) {
+            throw new TraversePathNotFoundException("Plain value doesn't support traversing.");
+        }
+
         return $this->value;
     }
 
@@ -73,7 +68,7 @@ class PlainValue implements JsonValue
      */
     public static function parse($obj, $nameSeparator = ':', $constraintsSeparator = ',')
     {
-        if(!is_numeric($obj) && !is_string($obj) && !is_bool($obj)) {
+        if (!is_numeric($obj) && !is_string($obj) && !is_bool($obj)) {
             throw new IncorrectJsonValueException("Provided JSON isn't a plain value.", $obj);
         }
 

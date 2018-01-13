@@ -18,32 +18,24 @@ interface JsonValue
     public function setContext(Context $context);
 
     /**
-     * Get value under given key with constraints evaluation.
-     *
-     * @param string $key
-     * @param string|string[] $constraints
-     * @return JsonValue
-     * @throws TraversePathNotFoundException
-     */
-    public function traverse($key, $constraints);
-
-    /**
      * Get JSON structure after evaluating constraints.
      *
+     * @param string|null $key Limit scope, use empty value to get whole structure.
      * @param string|string[] $constraints
      * @return mixed
      * @throws TraversePathNotFoundException
      */
-    public function get($constraints);
+    public function get($key, $constraints);
 
     /**
      * Get raw JSON structure (as is).
      *
+     * @param string|null $key Limit scope, use empty value to get whole structure.
      * @param string|string[] $constraints
      * @return mixed
      * @throws TraversePathNotFoundException
      */
-    public function getRaw($constraints);
+    public function getRaw($key, $constraints);
 
     /**
      * @param mixed $obj
