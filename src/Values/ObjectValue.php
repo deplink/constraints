@@ -122,13 +122,11 @@ class ObjectValue implements JsonValue
      * @param string|null $key Limit scope, use empty value to get whole structure.
      * @param string|string[] $constraints
      * @return mixed
-     * @throws TraversePathNotFoundException
+     * @throws \Exception
      */
     public function getRaw($key, $constraints)
     {
-        return $this->access($key, $constraints, function (JsonValue $item, $subKey, $constraints) {
-            return $item->getRaw($subKey, $constraints);
-        });
+        throw new \Exception("Method not implemented.");
     }
 
     /**
