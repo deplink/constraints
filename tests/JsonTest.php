@@ -25,6 +25,13 @@ class JsonTest extends \PHPUnit_Framework_TestCase
                 'gcc' => '-Wall',
             ],
         ],
+        'repositories' => [
+            [
+                'type' => 'local',
+                'src:linux,mac' => '/path/to/repo',
+                'src:windows' => 'c:/path/to/repo',
+            ],
+        ],
     ];
 
     private $constraintGroups = [
@@ -123,6 +130,30 @@ class JsonTest extends \PHPUnit_Framework_TestCase
                         'gcc' => ['-fPIC', '-Wall'],
                     ],
                 ],
+            ],
+            'repositories #1' => [
+                'repositories', ['linux'],
+                [
+                    [
+                        'type' => 'local',
+                        'src' => '/path/to/repo',
+                    ],
+                ],
+            ],
+            'repositories.0 #1' => [
+                'repositories.0', ['linux'],
+                [
+                    'type' => 'local',
+                    'src' => '/path/to/repo',
+                ],
+            ],
+            'repositories.0.src #1' => [
+                'repositories.0.src', [],
+                ['/path/to/repo', 'c:/path/to/repo'],
+            ],
+            'repositories.0.src #2' => [
+                'repositories.0.src', ['mac'],
+                '/path/to/repo',
             ],
         ];
     }

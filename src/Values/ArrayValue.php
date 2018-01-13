@@ -37,7 +37,7 @@ class ArrayValue implements JsonValue
      */
     private function access($key, $constraints, callable $callback)
     {
-        if(empty($key)) {
+        if(is_null($key) || $key === "") {
             $results = [];
             foreach($this->items as $item) {
                 $results[] = $callback($item, null, $constraints);
@@ -49,7 +49,7 @@ class ArrayValue implements JsonValue
         $parts = explode('.', $key, 2);
         $index = $parts[0];
 
-        if(!is_int($index)) {
+        if(!is_numeric($index)) {
             throw new TraversePathNotFoundException("Traversing the array value must be done using the numeric keys.");
         }
 
