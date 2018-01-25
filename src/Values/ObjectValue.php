@@ -20,7 +20,7 @@ class ObjectValue implements JsonValue
      *
      * @var array
      */
-    private $keys;
+    private $keys = [];
 
     /**
      * @var Context

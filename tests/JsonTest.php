@@ -72,6 +72,16 @@ class JsonTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * @throws TraversePathNotFoundException
+     */
+    public function testEmptyJson()
+    {
+        $json = new Json([]);
+        $output = $json->get();
+        Assert::assertEquals([], $output);
+    }
+
+    /**
      * @return array
      */
     public function getMethodTestsProvider()

@@ -94,7 +94,7 @@ class Json
      * @return mixed
      * @throws TraversePathNotFoundException
      */
-    public function get($key, $constraints)
+    public function get($key = null, $constraints = [])
     {
         return $this->root->get($key, $constraints);
     }
